@@ -172,17 +172,21 @@ public class WaitForOthersStepPlugin implements IStepPluginVersion2 {
         
         // we reached this, so we don't have any locked steps
         Batch newBatch = new Batch();
-        newBatch.setBatchName(property + " " + propValue);
-        step.getProzess().setBatch(newBatch);
-        ProcessManager.saveProcessInformation(step.getProzess());
+        if (createBatch) {
+	        newBatch.setBatchName(property + " " + propValue);
+	        step.getProzess().setBatch(newBatch);
+	        ProcessManager.saveProcessInformation(step.getProzess());
+        }
         
         // close the step in all other processes
         if (!stepsToClose.isEmpty()) {
             HelperSchritte hs = new HelperSchritte();
             for (Step other : stepsToClose) {
-            	other.getProzess().setBatch(newBatch);
-            	ProcessManager.saveProcessInformation(other.getProzess());
-                hs.CloseStepObjectAutomatic(other);
+            	if (createBatch) {
+	            	other.getProzess().setBatch(newBatch);
+	            	ProcessManager.saveProcessInformation(other.getProzess());
+            	}
+            	hs.CloseStepObjectAutomatic(other);
             }
         }
         
