@@ -136,7 +136,7 @@ public class WaitForOthersStepPlugin implements IStepPluginVersion2 {
         }
         
         List<Step> stepsToClose = new ArrayList<>();
-        String sql = FilterHelper.criteriaBuilder("\"processproperty:" + property + ":" + propValue + "\"", false, null, null, null, true, false);
+        String sql = FilterHelper.criteriaBuilder("\"project:" + step.getProzess().getProjekt().getTitel() + "\" \"processproperty:" + property + ":" + propValue + "\"", false, null, null, null, true, false);
         List<org.goobi.beans.Process> processes = ProcessManager.getProcesses("prozesse.titel", sql, null);
         for (org.goobi.beans.Process p : processes) {
             if (p.getId().equals(step.getProcessId())) {
