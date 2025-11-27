@@ -1,7 +1,6 @@
 package de.intranda.goobi.plugins;
 
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 
 /**
  * This file is part of a plugin for Goobi - a Workflow tool for the support of mass digitization.
@@ -21,9 +20,6 @@ import java.util.Date;
  * Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
-
-import java.util.HashMap;
-import java.util.List;
 
 import org.apache.commons.configuration.SubnodeConfiguration;
 import org.goobi.beans.Batch;
@@ -46,6 +42,8 @@ import de.sub.goobi.persistence.managers.ProcessManager;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import org.goobi.production.properties.DisplayProperty;
+import org.goobi.production.properties.PropertyParser;
 
 
 @PluginImplementation
@@ -116,27 +114,24 @@ public class WaitForOthersStepPlugin implements IStepPluginVersion2 {
     @Override
     public PluginReturnValue run() {
         boolean successful = true;
-        
-        // get the value of the property
-        String propValue = null;
-        for (GoobiProperty prop : step.getProzess().getEigenschaften()) {
-			if (prop.getPropertyName().equals(property)) {
-				propValue = prop.getPropertyValue();
-				break;
-			}
-		}
-        
-        // if value is null throw error
-        if (propValue==null) {
-        	log.error("Property " + propValue + " has no value to check");
+
+        Optional<String> propertyValue = PropertyParser.getInstance()
+                .getPropertiesForProcess(step.getProzess())
+                .stream()
+                .filter(p -> p.getName().equals(property))
+                .map(DisplayProperty::getReadValue)
+                .findFirst();
+
+        if (propertyValue.isEmpty()) {
+            log.error("Property " + property + " has no value to check");
         	JournalEntry entry = new JournalEntry(step.getProzess().getId(), new Date(), "Plugin " + title, LogType.ERROR,
-        			"Property " + propValue + " has no value to check.", EntryType.PROCESS);
+                    "Property " + property + " has no value to check.", EntryType.PROCESS);
     		JournalManager.saveJournalEntry(entry);
         	return PluginReturnValue.ERROR;
         }
         
         List<Step> stepsToClose = new ArrayList<>();
-        String sql = FilterHelper.criteriaBuilder("\"project:" + step.getProzess().getProjekt().getTitel() + "\" \"processproperty:" + property + ":" + propValue + "\"", false, null, null, null, true, false);
+        String sql = FilterHelper.criteriaBuilder("\"project:" + step.getProzess().getProjekt().getTitel() + "\" \"processproperty:" + property + ":" + propertyValue.get() + "\"", false, null, null, null, true, false);
         List<org.goobi.beans.Process> processes = ProcessManager.getProcesses("prozesse.titel", sql, null);
         for (org.goobi.beans.Process p : processes) {
             if (p.getId().equals(step.getProcessId())) {
@@ -173,7 +168,7 @@ public class WaitForOthersStepPlugin implements IStepPluginVersion2 {
         // we reached this, so we don't have any locked steps
         Batch newBatch = new Batch();
         if (createBatch) {
-	        newBatch.setBatchName(property + " " + propValue);
+	        newBatch.setBatchName(property + " " + propertyValue.get());
 	        step.getProzess().setBatch(newBatch);
 	        ProcessManager.saveProcessInformation(step.getProzess());
         }
