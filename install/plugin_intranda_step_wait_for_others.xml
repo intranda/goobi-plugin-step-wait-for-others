@@ -12,10 +12,11 @@
         <project>*</project>
         <step>*</step>
         
-        <!-- sample parameter -->
-        <value>test</value>
-        <!-- display button to finish the task directly from within the entered plugin -->
-        <allowTaskFinishButtons>true</allowTaskFinishButtons>
+        <!-- property to be identical for all affected processes -->
+        <property>Lieferung</property>
+        
+        <!-- define if a new batch shall be created to group the collected processes -->
+        <createBatch>true</createBatch>
     </config>
 
 </config_plugin>
